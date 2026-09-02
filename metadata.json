@@ -1,0 +1,6 @@
+{
+  "name": "RSVP Reader",
+  "description": "Tablet-optimized Material You RSVP speed reading app supporting TXT, PDF, EPUB, Web, and text input with customizable WPM, ORP pivot highlighting, and controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

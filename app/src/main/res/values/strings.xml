@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">RSVP Reader</string>
+    <string name="home_title">RSVP Speed Reader</string>
+    <string name="home_subtitle">Train your brain to read faster with optimal recognition point tracking</string>
+</resources>
