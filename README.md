@@ -72,3 +72,8 @@ Rapid Reader trains your brain to process written information rapidly using **RS
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
 
+## SCREENSHOTS(💀)
+<img width="1600" height="2560" alt="Screenshot_2026-09-02-08-52-46-598_com aistudio rsvpreader kptx" src="https://github.com/user-attachments/assets/2140494c-2c0a-43ac-82d5-b76b002b6e8b" />
+<img width="1600" height="2500" alt="IMG_20260902_085349" src="https://github.com/user-attachments/assets/99c6bc90-e924-47e6-91ab-5dc55840b308" />
+<img width="1600" height="2507" alt="IMG_20260902_085328" src="https://github.com/user-attachments/assets/3e81194a-33c2-466d-94c6-3b9f110f0c9c" />
+<img width="1600" height="2517" alt="Screenshot_2026-09-02-08-50-16-925_com aistudio rsvpreader kptx-edit" src="https://github.com/user-attachments/assets/ff7eb081-26be-4138-9099-acff647a0387" />
