@@ -19,18 +19,22 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -260,7 +264,7 @@ fun RsvpControlsDeck(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Row B: WPM Slider Bar
+                    // Row B: WPM Slider Bar with -/+ 25 WPM Stepper Buttons
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -280,24 +284,74 @@ fun RsvpControlsDeck(
                             )
                         }
 
-                        Slider(
-                            value = wpm.toFloat(),
-                            onValueChange = {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onWpmChange(it.toInt())
-                            },
-                            valueRange = 100f..1000f,
-                            steps = 35,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(26.dp)
-                                .testTag("wpm_slider"),
-                            colors = SliderDefaults.colors(
-                                thumbColor = MaterialTheme.colorScheme.primary,
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilledTonalIconButton(
+                                onClick = {
+                                    val newWpm = (wpm - 25).coerceAtLeast(100)
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onWpmChange(newWpm)
+                                },
+                                enabled = wpm > 100,
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .testTag("wpm_decrement_button"),
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Remove,
+                                    contentDescription = "Decrease speed by 25 WPM",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+
+                            Slider(
+                                value = wpm.toFloat(),
+                                onValueChange = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onWpmChange(it.toInt())
+                                },
+                                valueRange = 100f..1000f,
+                                steps = 35,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(26.dp)
+                                    .testTag("wpm_slider"),
+                                colors = SliderDefaults.colors(
+                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                                )
                             )
-                        )
+
+                            FilledTonalIconButton(
+                                onClick = {
+                                    val newWpm = (wpm + 25).coerceAtMost(1000)
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onWpmChange(newWpm)
+                                },
+                                enabled = wpm < 1000,
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .testTag("wpm_increment_button"),
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Increase speed by 25 WPM",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -372,9 +426,9 @@ fun RsvpControlsDeck(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // LEFT: Speed Setting
+                        // LEFT: Speed Setting with -/+ 25 WPM Stepper Buttons
                         Column(
-                            modifier = Modifier.width(170.dp)
+                            modifier = Modifier.width(220.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -396,25 +450,75 @@ fun RsvpControlsDeck(
 
                             Spacer(modifier = Modifier.height(2.dp))
 
-                            Slider(
-                                value = wpm.toFloat(),
-                                onValueChange = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    onWpmChange(it.toInt())
-                                },
-                                valueRange = 100f..1000f,
-                                steps = 35,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(28.dp)
-                                    .testTag("wpm_slider"),
-                                colors = SliderDefaults.colors(
-                                thumbColor = MaterialTheme.colorScheme.primary,
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                            )
-                        )
-                    }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                FilledTonalIconButton(
+                                    onClick = {
+                                        val newWpm = (wpm - 25).coerceAtLeast(100)
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onWpmChange(newWpm)
+                                    },
+                                    enabled = wpm > 100,
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .testTag("wpm_decrement_button_wide"),
+                                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Remove,
+                                        contentDescription = "Decrease speed by 25 WPM",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+
+                                Slider(
+                                    value = wpm.toFloat(),
+                                    onValueChange = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        onWpmChange(it.toInt())
+                                    },
+                                    valueRange = 100f..1000f,
+                                    steps = 35,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(28.dp)
+                                        .testTag("wpm_slider"),
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = MaterialTheme.colorScheme.primary,
+                                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                                    )
+                                )
+
+                                FilledTonalIconButton(
+                                    onClick = {
+                                        val newWpm = (wpm + 25).coerceAtMost(1000)
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onWpmChange(newWpm)
+                                    },
+                                    enabled = wpm < 1000,
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .testTag("wpm_increment_button_wide"),
+                                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Increase speed by 25 WPM",
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
 
                     // CENTER: Playback Action Controls
                     Row(

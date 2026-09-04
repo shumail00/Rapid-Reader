@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import android.app.Activity
+import android.view.WindowManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -48,6 +49,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -125,6 +127,17 @@ fun RsvpReadingScreen(
             }
         } else {
             onDispose { }
+        }
+    }
+
+    // Prevent Screen Timeout During Reading (Keep-Screen-On)
+    DisposableEffect(uiState.isPlaying) {
+        val window = (context as? Activity)?.window
+        if (uiState.isPlaying && window != null) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
 
@@ -503,7 +516,67 @@ fun RsvpReadingScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Reading progress track & Minimalist Metadata Footer Row
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .testTag("rsvp_metadata_footer"),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Subtle reading progress track
+                        LinearProgressIndicator(
+                            progress = { uiState.progress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Metadata Footer Row: Current Chapter / Section & Live Dynamic Progress (~Ym left, X%)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val chapterName = uiState.activeChapter?.title?.takeIf { it.isNotBlank() }
+                                ?: uiState.activeTitle.takeIf { it.isNotBlank() }
+                                ?: "Reading"
+
+                            Text(
+                                text = chapterName,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            val progressPercent = (uiState.progress * 100).toInt().coerceIn(0, 100)
+                            val timeRemaining = uiState.timeRemainingFormatted
+                            val progressMeta = if (timeRemaining.isNotBlank() && timeRemaining != "0:00") {
+                                "$progressPercent% • ~$timeRemaining left"
+                            } else {
+                                "$progressPercent%"
+                            }
+
+                            Text(
+                                text = progressMeta,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // 2. Material You 3 Controls Deck with Wavy Scrubber (Hidden in Focus/Zen Mode)
                     AnimatedVisibility(
