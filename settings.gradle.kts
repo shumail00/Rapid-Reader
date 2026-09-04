@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "RSVP Reader"
+rootProject.name = "Rapid Reader"
 
 include(":app")

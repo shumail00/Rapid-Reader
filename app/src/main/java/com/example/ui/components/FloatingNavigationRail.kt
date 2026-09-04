@@ -231,17 +231,22 @@ fun MobileBottomNavigationBar(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(start = 18.dp, end = 18.dp, bottom = 10.dp, top = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
             shape = RoundedCornerShape(32.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 8.dp,
-            shadowElevation = 14.dp,
+            shadowElevation = 16.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    shape = RoundedCornerShape(32.dp)
+                )
         ) {
             Row(
                 modifier = Modifier

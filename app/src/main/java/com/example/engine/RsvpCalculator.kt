@@ -81,24 +81,28 @@ object RsvpCalculator {
         return (leadingPunctCount + relativeOrp).coerceIn(0, token.length - 1)
     }
 
-    private fun calculatePauseMultiplier(token: String, isLastInParagraph: Boolean): Float {
+    /**
+     * Variable dwell math for RSVP speed reading:
+     * - Words with ., !, ? get 2.0x duration.
+     * - Words with ,, ; get 1.5x duration.
+     * - Words longer than 8 letters get 1.2x duration.
+     */
+    fun calculatePauseMultiplier(token: String, isLastInParagraph: Boolean = false): Float {
         var multiplier = 1.0f
 
-        when {
-            token.endsWith(".") || token.endsWith("!") || token.endsWith("?") || token.endsWith("...") || token.endsWith("…") -> {
-                multiplier = 2.2f
-            }
-            token.endsWith(",") || token.endsWith(";") || token.endsWith(":") || token.endsWith("—") || token.endsWith("-") -> {
-                multiplier = 1.45f
-            }
-            token.startsWith("\"") || token.endsWith("\"") || token.startsWith("(") || token.endsWith(")") -> {
-                multiplier = 1.2f
-            }
+        // 1. Words with ., !, ? get 2x duration
+        if (token.any { it == '.' || it == '!' || it == '?' || it == '…' }) {
+            multiplier = 2.0f
+        }
+        // 2. Words with ,, ; get 1.5x duration
+        else if (token.any { it == ',' || it == ';' || it == ':' || it == '—' }) {
+            multiplier = 1.5f
         }
 
-        // Long words need slightly more processing time
-        if (token.length > 10) {
-            multiplier += 0.2f
+        // 3. Words longer than 8 letters get 1.2x duration
+        val letterCount = token.count { it.isLetterOrDigit() }
+        if (letterCount > 8) {
+            multiplier *= 1.2f
         }
 
         if (isLastInParagraph) {

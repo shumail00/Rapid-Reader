@@ -16,11 +16,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -29,53 +27,55 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Beautiful Circular Wavy Progress Indicator with fluid harmonic sine wave animations.
- * Provides a modern, organic, fluid visual representation during PDF parsing and text processing.
+ * Material You 3 Expressive Circular Wavy Progress Indicator.
+ * Renders a smooth circular track with an undulating sinusoidal active arc with rounded caps,
+ * providing the authentic Material 3 fluid wavy animation.
  */
 @Composable
 fun CircularWavyProgressIndicator(
     modifier: Modifier = Modifier,
-    size: Dp = 72.dp,
+    progress: Float? = null,
+    size: Dp = 64.dp,
     waveCount: Int = 8,
     strokeWidth: Dp = 4.dp,
     primaryColor: Color = MaterialTheme.colorScheme.primary,
     secondaryColor: Color = MaterialTheme.colorScheme.tertiary,
-    trackColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+    trackColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
     content: @Composable (() -> Unit)? = null
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "wavy_progress_infinite")
+    val infiniteTransition = rememberInfiniteTransition(label = "m3_wavy_progress_infinite")
 
-    // Phase angle for wave ripple motion
-    val phase by infiniteTransition.animateFloat(
+    // Phase angle driving wave crests/troughs along the path
+    val wavePhase by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = (2 * PI).toFloat(),
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1800, easing = LinearEasing),
+            animation = tween(durationMillis = 1400, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "wave_phase"
+        label = "m3_wave_phase"
     )
 
-    // Base rotation of the entire circle
-    val rotationAngle by infiniteTransition.animateFloat(
+    // Smooth continuous rotation of the wavy arc
+    val rotationDegrees by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3600, easing = LinearEasing),
+            animation = tween(durationMillis = 2400, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "rotation_angle"
+        label = "m3_wave_rotation"
     )
 
-    // Breathing wave amplitude
-    val amplitudeScale by infiniteTransition.animateFloat(
-        initialValue = 0.7f,
-        targetValue = 1.3f,
+    // Subtle breathing sweep angle for indeterminate mode
+    val arcSweepAngle by infiniteTransition.animateFloat(
+        initialValue = 240f,
+        targetValue = 290f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 1600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "amplitude_scale"
+        label = "m3_wave_sweep"
     )
 
     Box(
@@ -83,124 +83,77 @@ fun CircularWavyProgressIndicator(
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.size(size)) {
-            val center = Offset(size.toPx() / 2f, size.toPx() / 2f)
             val strokePx = strokeWidth.toPx()
-            val baseRadius = (size.toPx() - strokePx * 4f) / 2f
-            val baseAmplitude = strokePx * 1.5f * amplitudeScale
+            val center = Offset(size.toPx() / 2f, size.toPx() / 2f)
+            val amplitude = strokePx * 0.9f
+            val baseRadius = (size.toPx() - strokePx * 2f - amplitude * 2f) / 2f
 
-            // 1. Subtle background track circle
+            // 1. Inactive baseline track (smooth circular ring)
             drawCircle(
                 color = trackColor,
                 radius = baseRadius,
                 center = center,
-                style = Stroke(width = strokePx * 0.75f)
+                style = Stroke(width = strokePx, cap = StrokeCap.Round)
             )
 
-            // 2. Secondary counter-rotating harmonic wave
-            drawWavyCircle(
-                center = center,
-                radius = baseRadius,
-                waveCount = waveCount,
-                amplitude = baseAmplitude * 0.65f,
-                phase = -phase * 1.2f,
-                rotationDegrees = -rotationAngle * 0.75f,
-                color = secondaryColor.copy(alpha = 0.45f),
-                strokeWidth = strokePx * 0.8f
-            )
+            // 2. Active sinusoidal wavy arc with rounded caps
+            val isDeterminate = progress != null
+            val sweep = if (isDeterminate) {
+                (progress!!.coerceIn(0f, 1f) * 360f)
+            } else {
+                arcSweepAngle
+            }
 
-            // 3. Primary vibrant wave with gradient sweep
-            val gradientBrush = Brush.sweepGradient(
-                colors = listOf(
-                    primaryColor,
-                    secondaryColor,
-                    primaryColor.copy(alpha = 0.8f),
-                    primaryColor
-                ),
-                center = center
-            )
+            if (sweep > 0f) {
+                val startAngle = if (isDeterminate) -90f else rotationDegrees
+                val path = buildWavyArcPath(
+                    center = center,
+                    baseRadius = baseRadius,
+                    amplitude = amplitude,
+                    waveCount = waveCount,
+                    startAngleDeg = startAngle,
+                    sweepAngleDeg = sweep,
+                    phase = wavePhase
+                )
 
-            drawWavyCircleWithBrush(
-                center = center,
-                radius = baseRadius,
-                waveCount = waveCount,
-                amplitude = baseAmplitude,
-                phase = phase,
-                rotationDegrees = rotationAngle,
-                brush = gradientBrush,
-                strokeWidth = strokePx
-            )
-
-            // 4. Subtle inner pulsing center dot
-            drawCircle(
-                color = primaryColor.copy(alpha = 0.25f * amplitudeScale),
-                radius = baseRadius * 0.25f,
-                center = center
-            )
+                drawPath(
+                    path = path,
+                    color = primaryColor,
+                    style = Stroke(width = strokePx, cap = StrokeCap.Round)
+                )
+            }
         }
 
-        // Optional Center Composable (e.g. icon or badge)
+        // Optional center composable (e.g. icon or percentage text)
         content?.invoke()
     }
 }
 
 /**
- * Helper to draw a continuous smooth sine-wave modulated circle.
+ * Builds a path along a circular arc where the radius is modulated by a sine wave:
+ * r(θ) = baseRadius + amplitude * sin(waveCount * θ + phase)
  */
-private fun DrawScope.drawWavyCircle(
+private fun buildWavyArcPath(
     center: Offset,
-    radius: Float,
-    waveCount: Int,
+    baseRadius: Float,
     amplitude: Float,
-    phase: Float,
-    rotationDegrees: Float,
-    color: Color,
-    strokeWidth: Float
-) {
-    val path = buildWavyPath(center, radius, waveCount, amplitude, phase, rotationDegrees)
-    drawPath(
-        path = path,
-        color = color,
-        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-    )
-}
-
-private fun DrawScope.drawWavyCircleWithBrush(
-    center: Offset,
-    radius: Float,
     waveCount: Int,
-    amplitude: Float,
-    phase: Float,
-    rotationDegrees: Float,
-    brush: Brush,
-    strokeWidth: Float
-) {
-    val path = buildWavyPath(center, radius, waveCount, amplitude, phase, rotationDegrees)
-    drawPath(
-        path = path,
-        brush = brush,
-        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-    )
-}
-
-private fun buildWavyPath(
-    center: Offset,
-    radius: Float,
-    waveCount: Int,
-    amplitude: Float,
-    phase: Float,
-    rotationDegrees: Float
+    startAngleDeg: Float,
+    sweepAngleDeg: Float,
+    phase: Float
 ): Path {
     val path = Path()
-    val steps = 180
-    val rotRad = Math.toRadians(rotationDegrees.toDouble()).toFloat()
+    val steps = (sweepAngleDeg.toInt().coerceAtLeast(10)) * 2
+    val startRad = Math.toRadians(startAngleDeg.toDouble())
+    val sweepRad = Math.toRadians(sweepAngleDeg.toDouble())
 
     for (i in 0..steps) {
-        val angle = (i.toDouble() / steps) * 2 * PI
-        val totalAngle = angle.toFloat() + rotRad
-        val r = radius + amplitude * sin(waveCount * angle + phase).toFloat()
+        val fraction = i.toDouble() / steps
+        val theta = startRad + fraction * sweepRad
+        val r = baseRadius + amplitude * sin(waveCount * theta + phase).toFloat()
 
-        val x = center.x + r * cos(totalAngle)
-        val y = center.y + r * sin(totalAngle)
+        val x = center.x + r * cos(theta).toFloat()
+        val y = center.y + r * sin(theta).toFloat()
 
         if (i == 0) {
             path.moveTo(x, y)
@@ -208,6 +161,6 @@ private fun buildWavyPath(
             path.lineTo(x, y)
         }
     }
-    path.close()
+
     return path
 }

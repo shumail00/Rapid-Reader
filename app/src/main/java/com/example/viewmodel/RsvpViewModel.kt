@@ -812,7 +812,13 @@ class RsvpViewModel(application: Application) : AndroidViewModel(application) {
 
                 val currentWord = words[index]
                 val baseMsPerWord = 60000.0 / calculatedWpm.toDouble()
-                val sleepDurationMs = (baseMsPerWord * currentWord.pauseMultiplier * chunkSize).toLong().coerceAtLeast(20L)
+                val wordMultiplier = if (state.punctuationPauseEnabled) {
+                    RsvpCalculator.calculatePauseMultiplier(currentWord.original, currentWord.isParagraphBreak)
+                } else {
+                    val letterCount = currentWord.original.count { it.isLetterOrDigit() }
+                    if (letterCount > 8) 1.2f else 1.0f
+                }
+                val sleepDurationMs = (baseMsPerWord * wordMultiplier * chunkSize).toLong().coerceAtLeast(20L)
 
                 delay(sleepDurationMs)
 

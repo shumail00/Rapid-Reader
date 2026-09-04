@@ -1,4 +1,5 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.util.Base64
 
 plugins {
   alias(libs.plugins.android.application)
@@ -14,7 +15,7 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.aistudio.rsvpreader.kptx"
+    applicationId = "com.shumail.rapidreader"
     minSdk = 24
     targetSdk = 36
     versionCode = 1
@@ -23,13 +24,45 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  // Read release signing credentials from environment variables if present
+  val signingKeyEnv = System.getenv("SIGNING_KEY")
+  val keyAliasEnv = System.getenv("KEY_ALIAS")
+  val keyPasswordEnv = System.getenv("KEY_PASSWORD")
+  val keystorePasswordEnv = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
+
+  // Resolve keystore file (supports direct file path or base64 encoded content)
+  val releaseKeyFile = if (!signingKeyEnv.isNullOrBlank()) {
+    val f = file(signingKeyEnv)
+    if (f.exists()) {
+      f
+    } else {
+      try {
+        val decoded = Base64.getDecoder().decode(signingKeyEnv.trim())
+        val tempKeyFile = file("${layout.buildDirectory.get().asFile.absolutePath}/release_keystore.jks")
+        tempKeyFile.parentFile?.mkdirs()
+        tempKeyFile.writeBytes(decoded)
+        tempKeyFile
+      } catch (_: Exception) {
+        null
+      }
+    }
+  } else {
+    null
+  }
+
+  val hasReleaseSigning = releaseKeyFile != null && releaseKeyFile.exists() &&
+      !keyAliasEnv.isNullOrBlank() &&
+      !keyPasswordEnv.isNullOrBlank() &&
+      !keystorePasswordEnv.isNullOrBlank()
+
   signingConfigs {
-    create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+    if (hasReleaseSigning) {
+      create("release") {
+        storeFile = releaseKeyFile
+        storePassword = keystorePasswordEnv
+        keyAlias = keyAliasEnv
+        keyPassword = keyPasswordEnv
+      }
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -42,9 +75,11 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("release")
+      if (hasReleaseSigning) {
+        signingConfig = signingConfigs.getByName("release")
+      }
     }
     debug { signingConfig = signingConfigs.getByName("debugConfig") }
   }

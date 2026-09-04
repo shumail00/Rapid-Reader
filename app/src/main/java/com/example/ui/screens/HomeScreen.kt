@@ -16,8 +16,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,7 +50,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -76,6 +78,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -167,14 +170,6 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
             containerColor = contentBg,
             snackbarHost = { SnackbarHost(snackbarHostState) },
-            bottomBar = {
-                if (isCompactMobile) {
-                    MobileBottomNavigationBar(
-                        currentTab = currentTab,
-                        onTabSelected = { currentTab = it }
-                    )
-                }
-            },
             floatingActionButton = {
                 if (isCompactMobile && currentTab == AppNavTab.HOME) {
                     FloatingActionButton(
@@ -185,7 +180,9 @@ fun HomeScreen(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         shape = RoundedCornerShape(18.dp),
-                        modifier = Modifier.testTag("mobile_fab_new_read")
+                        modifier = Modifier
+                            .padding(bottom = 84.dp)
+                            .testTag("mobile_fab_new_read")
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
@@ -196,28 +193,36 @@ fun HomeScreen(
                 }
             }
         ) { innerPadding ->
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                // 1. Floating Pill-Shaped Navigation Rail for Tablets / Wide Screens Only
-                if (!isCompactMobile) {
-                    FloatingNavigationRail(
-                        currentTab = currentTab,
-                        onTabSelected = { currentTab = it },
-                        onNewReadingClick = { showDirectTextDialog = true },
-                        onSettingsClick = { showSettingsSheet = true }
+                    .padding(
+                        top = innerPadding.calculateTopPadding(),
+                        start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                        end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                        bottom = 0.dp
                     )
-                }
-
-                // 2. Main Content Canvas with Animated Tab Transitions
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    AnimatedContent(
+                    // 1. Floating Pill-Shaped Navigation Rail for Tablets / Wide Screens Only
+                    if (!isCompactMobile) {
+                        FloatingNavigationRail(
+                            currentTab = currentTab,
+                            onTabSelected = { currentTab = it },
+                            onNewReadingClick = { showDirectTextDialog = true },
+                            onSettingsClick = { showSettingsSheet = true }
+                        )
+                    }
+
+                    // 2. Main Content Canvas with Animated Tab Transitions
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    ) {
+                        AnimatedContent(
                         targetState = currentTab,
                         transitionSpec = {
                             (fadeIn(animationSpec = tween(220)) + scaleIn(initialScale = 0.98f, animationSpec = tween(220)))
@@ -328,6 +333,15 @@ fun HomeScreen(
                     }
                 }
             }
+
+            // 3. Floating Mobile Bottom Navigation Bar (Floats directly above content with zero bottom bar / black gap)
+            if (isCompactMobile) {
+                MobileBottomNavigationBar(
+                    currentTab = currentTab,
+                    onTabSelected = { currentTab = it },
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
         }
     }
 
@@ -404,6 +418,7 @@ fun HomeScreen(
         )
     }
 }
+}
 
 @Composable
 private fun HomeMainContent(
@@ -438,6 +453,7 @@ private fun HomeMainContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = if (isCompactMobile) 16.dp else 24.dp, vertical = if (isCompactMobile) 12.dp else 16.dp),
+        contentPadding = PaddingValues(bottom = if (isCompactMobile) 96.dp else 24.dp),
         verticalArrangement = Arrangement.spacedBy(if (isCompactMobile) 16.dp else 22.dp)
     ) {
         // Header Row
@@ -1311,6 +1327,7 @@ private fun LibraryView(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 14.dp),
+        contentPadding = PaddingValues(bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
@@ -1400,6 +1417,7 @@ private fun ProgressView(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 14.dp),
+        contentPadding = PaddingValues(bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -1570,6 +1588,7 @@ private fun SavedView(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 14.dp),
+        contentPadding = PaddingValues(bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
@@ -1653,6 +1672,7 @@ private fun SearchView(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 14.dp),
+        contentPadding = PaddingValues(bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {

@@ -1,7 +1,7 @@
 <div align="center">
 
 <!-- Replace the src URL below with your uploaded logo image link -->
-<img src="https://github.com/user-attachments/assets/9705f733-d501-48b6-8911-3039e694bb34" />"
+<img src="https://github.com/user-attachments/assets/9705f733-d501-48b6-8911-3039e694bb34" width="140" alt="Rapid Reader Logo" />
 
 # ⚡ Rapid Reader
 

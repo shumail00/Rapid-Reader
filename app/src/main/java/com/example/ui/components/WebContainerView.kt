@@ -285,6 +285,22 @@ fun WebContainerView(
                     },
                     modifier = Modifier.fillMaxSize()
                 )
+
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(palette.backgroundColor.copy(alpha = 0.85f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularWavyProgressIndicator(
+                            size = 64.dp,
+                            waveCount = 8,
+                            strokeWidth = 4.dp,
+                            primaryColor = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
         }
 
