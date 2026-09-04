@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.AppDatabase
+import com.example.data.CoverImageManager
 import com.example.data.DocumentParsers
 import com.example.data.ReadingDocument
 import com.example.data.ReadingSession
@@ -230,6 +231,9 @@ class RsvpViewModel(application: Application) : AndroidViewModel(application) {
                         val parsedWords = RsvpCalculator.parseTextToRsvpWords(pdfResult.content, _uiState.value.punctuationPauseEnabled)
                         val extractedChapters = RsvpCalculator.extractChapters(pdfResult.content, parsedWords)
 
+                        // Render first page thumbnail via Android's native PdfRenderer into internal cache/storage
+                        val firstPageCoverPath = CoverImageManager.generatePdfFirstPageThumbnail(context, File(pdfResult.localFilePath))
+
                         val doc = ReadingDocument(
                             title = originalFileName,
                             content = pdfResult.content,
@@ -237,6 +241,7 @@ class RsvpViewModel(application: Application) : AndroidViewModel(application) {
                             currentWordIndex = 0,
                             totalWords = parsedWords.size,
                             preferredWpm = _uiState.value.wpm,
+                            coverImagePath = firstPageCoverPath,
                             localFilePath = pdfResult.localFilePath
                         )
                         val insertedId = readingDao.insertDocument(doc)
@@ -273,6 +278,9 @@ class RsvpViewModel(application: Application) : AndroidViewModel(application) {
                         val parsedWords = RsvpCalculator.parseTextToRsvpWords(epubResult.content, _uiState.value.punctuationPauseEnabled)
                         val extractedChapters = RsvpCalculator.extractChapters(epubResult.content, parsedWords)
 
+                        // Extract embedded cover image from EPUB manifest/archive
+                        val extractedCoverPath = CoverImageManager.extractEpubCoverImage(context, File(epubResult.localFilePath))
+
                         val doc = ReadingDocument(
                             title = originalFileName,
                             content = epubResult.content,
@@ -280,6 +288,7 @@ class RsvpViewModel(application: Application) : AndroidViewModel(application) {
                             currentWordIndex = 0,
                             totalWords = parsedWords.size,
                             preferredWpm = _uiState.value.wpm,
+                            coverImagePath = extractedCoverPath,
                             localFilePath = epubResult.localFilePath
                         )
                         val insertedId = readingDao.insertDocument(doc)
@@ -530,23 +539,13 @@ class RsvpViewModel(application: Application) : AndroidViewModel(application) {
     fun updateDocumentCover(docId: Long, imageUri: Uri, context: Context) {
         viewModelScope.launch {
             try {
-                val coversDir = File(context.filesDir, "covers")
-                if (!coversDir.exists()) coversDir.mkdirs()
-                val targetFile = File(coversDir, "cover_${docId}_${System.currentTimeMillis()}.jpg")
-                context.contentResolver.openInputStream(imageUri)?.use { input ->
-                    targetFile.outputStream().use { output ->
-                        input.copyTo(output)
+                val oldDoc = readingDao.getDocumentById(docId)
+                val persistentCoverPath = CoverImageManager.persistCustomCoverFromUri(context, imageUri, docId)
+                if (persistentCoverPath != null) {
+                    if (oldDoc?.coverImagePath != null && oldDoc.coverImagePath != persistentCoverPath) {
+                        CoverImageManager.deleteCoverFile(oldDoc.coverImagePath)
                     }
-                }
-                if (targetFile.exists() && targetFile.length() > 0) {
-                    val oldDoc = readingDao.getDocumentById(docId)
-                    oldDoc?.coverImagePath?.let { oldPath ->
-                        if (oldPath != targetFile.absolutePath) {
-                            val oldF = File(oldPath)
-                            if (oldF.exists()) oldF.delete()
-                        }
-                    }
-                    readingDao.updateCoverImage(docId, targetFile.absolutePath)
+                    readingDao.updateCoverImage(docId, persistentCoverPath)
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "Failed to save cover: ${e.localizedMessage}") }
@@ -558,14 +557,23 @@ class RsvpViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 val doc = readingDao.getDocumentById(docId)
-                doc?.coverImagePath?.let { path ->
-                    val f = File(path)
-                    if (f.exists()) f.delete()
-                }
+                CoverImageManager.deleteCoverFile(doc?.coverImagePath)
                 readingDao.updateCoverImage(docId, null)
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "Failed to remove cover: ${e.localizedMessage}") }
             }
+        }
+    }
+
+    fun resetProgress(docId: Long) {
+        viewModelScope.launch {
+            readingDao.updateProgress(docId, 0, System.currentTimeMillis(), false)
+        }
+    }
+
+    fun clearAllReadingSessions() {
+        viewModelScope.launch {
+            readingDao.clearAllSessions()
         }
     }
 

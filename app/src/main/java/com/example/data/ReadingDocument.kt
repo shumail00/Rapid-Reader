@@ -18,7 +18,8 @@ data class ReadingDocument(
     val isFavorite: Boolean = false,
     val coverImagePath: String? = null,
     val localFilePath: String? = null,
-    val webUrl: String? = null
+    val webUrl: String? = null,
+    val author: String = ""
 ) {
     val progressPercentage: Float
         get() = if (totalWords > 0) (currentWordIndex.toFloat() / totalWords.toFloat()).coerceIn(0f, 1f) else 0f

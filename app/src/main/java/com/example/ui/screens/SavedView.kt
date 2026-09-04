@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.ReadingDocument
+import com.example.data.toBookItem
 import com.example.viewmodel.RsvpViewModel
 
 @Composable
@@ -141,15 +142,16 @@ fun SavedView(
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(savedDocs, key = { it.id }) { doc ->
-                    LibraryDocumentCard(
-                        document = doc,
-                        onRead = { viewModel.resumeDocument(doc) },
-                        onToggleFavorite = { viewModel.toggleFavorite(doc.id, !doc.isFavorite) },
+                    BookCardTile(
+                        item = doc.toBookItem(),
+                        isThreeColumn = false,
+                        onOpen = { viewModel.resumeDocument(doc) },
                         onChangeCover = {
                             documentForCoverChange = doc
                             imagePickerLauncher.launch("image/*")
                         },
-                        onRemoveCover = { viewModel.removeDocumentCover(doc.id) },
+                        onToggleFavorite = { viewModel.toggleFavorite(doc.id, !doc.isFavorite) },
+                        onResetProgress = { viewModel.resetProgress(doc.id) },
                         onDelete = { documentToDelete = doc }
                     )
                 }

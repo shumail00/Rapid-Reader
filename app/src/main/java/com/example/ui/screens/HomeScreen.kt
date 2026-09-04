@@ -252,13 +252,13 @@ fun HomeScreen(
                                 )
                             }
                             AppNavTab.LIBRARY -> {
-                                LibraryView(
+                                LibraryGridScreen(
                                     documents = savedDocuments,
                                     viewModel = viewModel
                                 )
                             }
                             AppNavTab.PROGRESS -> {
-                                ProgressView(
+                                AnalyticsDashboardScreen(
                                     viewModel = viewModel,
                                     savedDocuments = savedDocuments,
                                     onStartNewReadClick = { showDirectTextDialog = true }
@@ -1315,263 +1315,16 @@ private fun SamplePresetItemCard(
 }
 
 @Composable
-private fun LibraryView(
-    documents: List<ReadingDocument>,
-    viewModel: RsvpViewModel
-) {
-    val cardBg = MaterialTheme.colorScheme.surfaceContainer
-    val textPrimary = MaterialTheme.colorScheme.onSurface
-    val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        contentPadding = PaddingValues(bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            Text(
-                text = "My Library",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = textPrimary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "${documents.size} saved documents & books",
-                style = MaterialTheme.typography.bodyMedium,
-                color = textSecondary
-            )
-        }
-
-        if (documents.isEmpty()) {
-            item {
-                Card(
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = cardBg),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MenuBook,
-                            contentDescription = null,
-                            tint = textSecondary,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "Your library is empty",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = textPrimary
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Import a PDF, EPUB or text file to build your reading list",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = textSecondary
-                        )
-                    }
-                }
-            }
-        } else {
-            items(documents) { doc ->
-                RecentItemCard(
-                    document = doc,
-                    cardBg = cardBg,
-                    textPrimary = textPrimary,
-                    textSecondary = textSecondary,
-                    onResume = { viewModel.resumeDocument(doc) },
-                    onDelete = { viewModel.deleteDocument(doc.id) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun ProgressView(
     viewModel: RsvpViewModel,
     savedDocuments: List<ReadingDocument>,
     onStartNewReadClick: () -> Unit
 ) {
-    val sessions by viewModel.readingSessions.collectAsState()
-    val cardBg = MaterialTheme.colorScheme.surfaceContainer
-    val heroPrimaryBg = MaterialTheme.colorScheme.primaryContainer
-    val heroPrimaryOnColor = MaterialTheme.colorScheme.onPrimaryContainer
-    val textPrimary = MaterialTheme.colorScheme.onSurface
-    val textSecondary = MaterialTheme.colorScheme.onSurfaceVariant
-
-    val totalWordsRead = sessions.sumOf { it.wordsRead }
-    val avgWpm = if (sessions.isNotEmpty()) sessions.map { it.averageWpm }.average().toInt() else 0
-    val totalTimeSeconds = sessions.sumOf { it.durationSeconds }
-    val totalMinutes = totalTimeSeconds / 60
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        contentPadding = PaddingValues(bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Text(
-                text = "Reading Insights",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = textPrimary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Track your speed reading metrics & streaks",
-                style = MaterialTheme.typography.bodyMedium,
-                color = textSecondary
-            )
-        }
-
-        // Hero Stats Card
-        item {
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = heroPrimaryBg),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = "TOTAL PROGRESS",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.5.sp,
-                        color = heroPrimaryOnColor.copy(alpha = 0.8f)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = "$totalWordsRead",
-                                style = MaterialTheme.typography.headlineLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = heroPrimaryOnColor
-                            )
-                            Text(
-                                text = "Words Read",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = heroPrimaryOnColor.copy(alpha = 0.8f)
-                            )
-                        }
-
-                        Column {
-                            Text(
-                                text = "$avgWpm",
-                                style = MaterialTheme.typography.headlineLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = heroPrimaryOnColor
-                            )
-                            Text(
-                                text = "Avg WPM",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = heroPrimaryOnColor.copy(alpha = 0.8f)
-                            )
-                        }
-
-                        Column {
-                            Text(
-                                text = "$totalMinutes m",
-                                style = MaterialTheme.typography.headlineLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = heroPrimaryOnColor
-                            )
-                            Text(
-                                text = "Focus Time",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = heroPrimaryOnColor.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Recent Sessions Title
-        item {
-            Text(
-                text = "Recent Sessions",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = textPrimary
-            )
-        }
-
-        if (sessions.isEmpty()) {
-            item {
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = cardBg),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "No recorded sessions yet",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = textSecondary
-                        )
-                    }
-                }
-            }
-        } else {
-            items(sessions) { session ->
-                Card(
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = cardBg),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = session.documentTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = textPrimary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "${session.wordsRead} words · ${session.averageWpm} WPM · ${session.durationSeconds}s",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = textSecondary
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
+    AnalyticsDashboardScreen(
+        viewModel = viewModel,
+        savedDocuments = savedDocuments,
+        onStartNewReadClick = onStartNewReadClick
+    )
 }
 
 @Composable
