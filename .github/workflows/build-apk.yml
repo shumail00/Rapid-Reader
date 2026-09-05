@@ -23,12 +23,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK Build-Tools
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android Build Tools
         run: |
           yes | sdkmanager --licenses || true
-          sdkmanager --install "build-tools;34.0.0" "build-tools;29.0.3"
-          BUILD_TOOLS_DIR=$(find $ANDROID_HOME/build-tools -maxdepth 1 -mindepth 1 | sort -V | tail -n 1)
-          echo "$BUILD_TOOLS_DIR" >> $GITHUB_PATH
+          sdkmanager "build-tools;34.0.0" "build-tools;29.0.3"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -50,6 +51,8 @@ jobs:
           alias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
 
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
